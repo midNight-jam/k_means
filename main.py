@@ -5,8 +5,8 @@ from scipy.sparse.linalg import norm
 from sklearn.metrics.pairwise import pairwise_distances
 
 def readtrain_createcsr():
-  train_file = 'tiny.dat'
-  # train_file = 'train.dat'
+  # train_file = 'tiny.dat'
+  train_file = 'train.dat'
   row_id = 0
   rows = []
   cols = []
@@ -30,6 +30,7 @@ def readtrain_createcsr():
   cols = np.array(cols)
   vals = np.array(vals)
   max_feature += 1
+  print('Data Read Succesfully...')
   return coo_matrix((vals, (rows, cols)), shape=(row_id, max_feature )).tocsr()
 
 def centroid(data):
@@ -119,59 +120,104 @@ def main():
     # print('-'*50)
 
 
-def K_Means(csr_data, K):
-  # docs = 8580
-  docs = 5
-  centroid_indices = np.random.choice(docs, K, replace=False)
-  print('Centroids : {}'.format(centroid_indices))
-  centroid_vectors = csr_data[centroid_indices].toarray()
-  print('vectors : {}'.format(centroid_vectors))
-  # Loop Begins
+def K_Means(csr_data, K = 3, max_epoch = 5, max_iterations = 5):
+  print('Starting K Means')
+  print('K : {}, max_Epoch : {}, max_Iterations : {} \n'.format(K, max_epoch, max_iterations))
+  docs = 8580
+  # docs = 5
   cluster = {}
-  for i in range(K):
-    cluster[i] = []
+  f = open('res_K_Means.txt', 'w')
+  f.write('K : {}, max_Epoch : {}, max_Iterations : {} \n'.format(K, max_epoch, max_iterations))
 
-  cv = csr_matrix(centroid_vectors)
-  dist = pairwise_distances(csr_data, cv) # dist between data & cluster centroids
-  print(dist)
-  # axis 0 for column, return the index of the min dist for that column
-  # axis 1 for row, this is what we need to tell which row has shortest dist to which cluster
-  min_dist = dist.argmin(axis=1)
-  print(min_dist)
-  for i in range(len(min_dist)):
-    cluster[min_dist[i]].append(i) # assiging the vect (rowID) to closest cluster
+  for e in range(max_epoch):
+    print('{} Epoch : {} {} '.format('-'*10, e, '-'*10))
+    f.write('{} Epoch : {} {} \n'.format('-'*10, e, '-'*10))
+    centroid_indices = np.random.choice(docs, K, replace=False)
+    # print('Centroids : {}'.format(centroid_indices))
+    centroid_vectors = csr_data[centroid_indices].toarray()
+    # print('vectors : {}'.format(centroid_vectors))
 
-  # readjusting the centroids by taking the mean
+    # Loop Begins
+    for itr in range(max_iterations):
+      cluster = {}
+      for i in range(K):
+        cluster[i] = []
 
-  for i in range(K):
-    clust_vect_indices = cluster[i]
-    clust_vect_indices_data = csr_data[clust_vect_indices].toarray()
-    clust_mean = np.mean(clust_vect_indices_data, axis=0)
-    centroid_vectors[i] = clust_mean
+      cv = csr_matrix(centroid_vectors)
+      dist = pairwise_distances(csr_data, cv) # dist between data & cluster centroids
+      # print(dist)
+      # axis 0 for column, return the index of the min dist for that column
+      # axis 1 for row, this is what we need to tell which row has shortest dist to which cluster
+      min_dist = dist.argmin(axis=1)
+      # print(min_dist)
+      for i in range(len(min_dist)):
+        cluster[min_dist[i]].append(i) # assiging the vect (rowID) to closest cluster
 
-    # print('clust_vect_indices : {}'.format(clust_vect_indices ))
-    # print('clust_vect_indices_data : {}'.format(csr_data[clust_vect_indices].toarray()))
-    # print('clust_mean  : {}'.format(clust_mean))
-    # print('vect : {}'.format(vectors[i]))
-    # print('vect mean : {}'.format(np.mean(vectors[i],axis=0)))
+      # readjusting the centroids by taking the mean
+      for i in range(K):
+        clust_vect_indices = cluster[i]
+        clust_vect_indices_data = csr_data[clust_vect_indices].toarray()
+        clust_mean = np.mean(clust_vect_indices_data, axis=0)
+        centroid_vectors[i] = clust_mean
 
-  cmean = np.mean(centroid_vectors, axis=0)
-  print('cmean : {}'.format(cmean))
-  # Loop Ends
+        # print('clust_vect_indices : {}'.format(clust_vect_indices ))
+        # print('clust_vect_indices_data : {}'.format(csr_data[clust_vect_indices].toarray()))
+        # print('clust_mean  : {}'.format(clust_mean))
+        # print('vect : {}'.format(vectors[i]))
+        # print('vect mean : {}'.format(np.mean(vectors[i],axis=0)))
 
-  print(cluster)
+      # print('Epoch : {} , Itr : {} Cluster : {}'.format(e, itr, cluster))
+      # f.write('Epoch : {} , Itr : {} Cluster : {}\n'.format(e, itr, cluster))
+    print('Epoch {} completed '.format(e))
+    # print('\n~~~~ Epoch : {} Cluster : {}\n'.format(e, cluster))
+    f.write('\n~~~~ Epoch : {} Cluster : {}\n\n'.format(e, cluster))
+
+      # cmean = np.mean(centroid_vectors, axis=0)
+      # print('cmean : {}'.format(cmean))
+
+      #TODO calculate SSE for current formed clusters
+
+      # Loop Ends
+
+  print('Fianl cluster assignments Writen')
+  f.write('Fianl cluster assignments : {}\n'.format(cluster))
+  f.close()
+  print('Sending to write assiginments')
+  write_Cluster(cluster)
+
+def write_Cluster(cld):
+  f = open('KM_res_assig.txt', 'w')
+  resD = {}
+  for k in cld:
+    for v in cld[k]:
+      resD[v] = k
+  for k in sorted(resD.keys()):
+    f.write('{}\n'.format(resD[k] + 1))
+  f.close()
+
 
 def main_two():
   train_csr = readtrain_createcsr()
-  print(train_csr.toarray())
+  # print(train_csr.toarray())
   mean  = train_csr.mean(axis=0)
-  print('means : {}'.format(mean))
+  # print('means : {}'.format(mean))
   lin_norm = norm(train_csr)
-  print('nrom : {}'.format(lin_norm))
+  # print('nrom : {}'.format(lin_norm))
   distances = pairwise_distances(train_csr, train_csr)
-  print(distances)
-  K = 2
-  K_Means(train_csr,K)
+  # print(distances)
+  K = 7
+  max_epoch = 5
+  K_Means(train_csr, K, max_epoch)
+
+def tryD():
+  cld = {}
+  resD = {}
+  cld[0] = [1, 4, 7, 10, 13]
+  cld[1] = [2, 5, 8, 11, 14]
+  cld[2] = [3, 6, 9, 12, 15]
+  write_Cluster(cld)
+
 if __name__ == '__main__':
   # main()
   main_two()
+  # tryD()
