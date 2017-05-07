@@ -6,6 +6,7 @@ import os.path
 from datetime import datetime
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
+from sklearn.decomposition import TruncatedSVD
 
 
 def write_Cluster(cld, e):
@@ -206,12 +207,26 @@ def calculate_SumofSquareDistanceBySize(cluster, csr_data, epoch):
 def main_two():
   train_csr = readtrain_createcsr()
   train_csr = normalize(train_csr, norm='l2', axis=1)
+  # dr_comp = 2
+  dr_comp = 1200
+  # print('\nreducing dimension from {} to {}'.format(train_csr.shape, dr_comp))
+  svd = TruncatedSVD(n_components=dr_comp, n_iter=7, random_state=42)
+  train_Dr = svd.fit_transform(train_csr)
+  # print('\nnew reduced dimension {}'.format(train_Dr.shape))
+  train_csr_Dr = csr_matrix(train_Dr)
+  # print('type before : {}'.format(type(train_csr)))
+  # print('type after : {}'.format(type(train_csr_Dr)))
   # K = 3
   K = 7
   max_epoch = 10
   max_iterations = 100
-  K_Means_PairWise(train_csr, K, max_epoch, max_iterations)
+  K_Means_PairWise(train_csr_Dr, K, max_epoch, max_iterations)
   # K_Means_CosineSimilarity(train_csr, K, max_epoch, max_iterations)
 
 if __name__ == '__main__':
   main_two()
+  # actual data shape : shape : (8580, 126356)
+
+
+
+
