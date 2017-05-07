@@ -117,10 +117,10 @@ def main():
     for j in range(len(clusters[i])):
       f.write('        p : {}'.format(clusters[i][j]))
       # print('        p : {}'.format(clusters[i][j]))
-    # print('-'*50)
+      # print('-'*50)
 
 
-def K_Means(csr_data, K = 3, max_epoch = 5, max_iterations = 5):
+def K_Means(csr_data, K = 3, max_epoch = 10, max_iterations = 10):
   print('Starting K Means')
   print('K : {}, max_Epoch : {}, max_Iterations : {} \n'.format(K, max_epoch, max_iterations))
   docs = 8580
@@ -128,8 +128,10 @@ def K_Means(csr_data, K = 3, max_epoch = 5, max_iterations = 5):
   cluster = {}
   f = open('res_K_Means.txt', 'w')
   f.write('K : {}, max_Epoch : {}, max_Iterations : {} \n'.format(K, max_epoch, max_iterations))
-
-  for e in range(max_epoch):
+  old_cluster = cluster
+  e = 1
+  # for e in range(max_epoch):
+  while True:
     print('{} Epoch : {} {} '.format('-'*10, e, '-'*10))
     f.write('{} Epoch : {} {} \n'.format('-'*10, e, '-'*10))
     centroid_indices = np.random.choice(docs, K, replace=False)
@@ -159,34 +161,39 @@ def K_Means(csr_data, K = 3, max_epoch = 5, max_iterations = 5):
         clust_vect_indices_data = csr_data[clust_vect_indices].toarray()
         clust_mean = np.mean(clust_vect_indices_data, axis=0)
         centroid_vectors[i] = clust_mean
+      print('Iteration : {}'.format(itr))
+      if(old_cluster == cluster): # no change detected
+        print('-----------NOCHNAGE termination EPoch--------')
+        break
+      old_cluster = cluster
 
-        # print('clust_vect_indices : {}'.format(clust_vect_indices ))
-        # print('clust_vect_indices_data : {}'.format(csr_data[clust_vect_indices].toarray()))
-        # print('clust_mean  : {}'.format(clust_mean))
-        # print('vect : {}'.format(vectors[i]))
-        # print('vect mean : {}'.format(np.mean(vectors[i],axis=0)))
-
-      # print('Epoch : {} , Itr : {} Cluster : {}'.format(e, itr, cluster))
-      # f.write('Epoch : {} , Itr : {} Cluster : {}\n'.format(e, itr, cluster))
     print('Epoch {} completed '.format(e))
     # print('\n~~~~ Epoch : {} Cluster : {}\n'.format(e, cluster))
     f.write('\n~~~~ Epoch : {} Cluster : {}\n\n'.format(e, cluster))
+    write_Cluster(cluster, e)
 
-      # cmean = np.mean(centroid_vectors, axis=0)
-      # print('cmean : {}'.format(cmean))
-
-      #TODO calculate SSE for current formed clusters
-
+    # cmean = np.mean(centroid_vectors, axis=0)
+    # print('cmean : {}'.format(cmean))
+    # break
+    e += 1 # either we have reached the max_EPoCh
+    if(e == max_epoch):
+      break
       # Loop Ends
 
   print('Fianl cluster assignments Writen')
   f.write('Fianl cluster assignments : {}\n'.format(cluster))
   f.close()
   print('Sending to write assiginments')
-  write_Cluster(cluster)
+  write_Cluster(cluster,e)
 
-def write_Cluster(cld):
-  f = open('KM_res_assig.txt', 'w')
+def write_Cluster(cld, e):
+  subdir = 'results'+str(datetime.now()) + '_epcoh_{}_res'.format(e)
+  print(subdir)
+  try:
+    os.mkdir(subdir)
+  except Exception:
+    print(Exception)
+  f = open(os.path.join(subdir, 'KM_res_assig_{}.txt'.format(e) ), 'w')
   resD = {}
   for k in cld:
     for v in cld[k]:
@@ -206,8 +213,9 @@ def main_two():
   distances = pairwise_distances(train_csr, train_csr)
   # print(distances)
   K = 7
-  max_epoch = 5
-  K_Means(train_csr, K, max_epoch)
+  max_epoch = 10
+  max_iterations = 50
+  K_Means(train_csr, K, max_epoch, max_iterations)
 
 def tryD():
   cld = {}
@@ -215,9 +223,30 @@ def tryD():
   cld[0] = [1, 4, 7, 10, 13]
   cld[1] = [2, 5, 8, 11, 14]
   cld[2] = [3, 6, 9, 12, 15]
-  write_Cluster(cld)
+
+  resD[0] = [1, 4, 7, 10, 13]
+  resD[1] = [2, 5, 8, 11, 14]
+  resD[2] = [9, 6, 9, 12, 15]
+
+  print('Eual : {}'.format(cld == resD))
+  # write_Cluster(cld)
+
+import os.path
+from datetime import datetime
+def tryF():
+  subdir = str(datetime.now()) + '-res'
+  print(subdir)
+  try:
+    os.mkdir(subdir)
+  except Exception:
+    print(Exception)
+  f = open(os.path.join(subdir,'res__'+'.txt'), 'w')
+  f.write('Some shit')
+  f.close()
+
 
 if __name__ == '__main__':
   # main()
   main_two()
   # tryD()
+  # tryF()
