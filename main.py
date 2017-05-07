@@ -54,8 +54,8 @@ def readtrain_createcsr():
   return coo_matrix((vals, (rows, cols)), shape=(row_id, max_feature )).tocsr()
 
 def K_Means_PairWise(csr_data, K = 3, max_epoch = 10, max_iterations = 10):
-  print('Starting K Means')
-  print('K : {}, max_Epoch : {}, max_Iterations : {} \n'.format(K, max_epoch, max_iterations))
+  print('Starting K Means Pairwise Metric')
+  print('\t [ K : {}, max_Epoch : {}, max_Iterations : {} ]\n'.format(K, max_epoch, max_iterations))
   # docs = 5
   docs = 8580
   cluster = {}
@@ -97,9 +97,11 @@ def K_Means_PairWise(csr_data, K = 3, max_epoch = 10, max_iterations = 10):
 
     print('Epoch {} completed '.format(e))
     # print('\n~~~~ Epoch : {} Cluster : {}\n'.format(e, cluster))
-    f.write('\n~~~~ Epoch : {} Cluster : {}\n\n'.format(e, cluster))
+    # f.write('\n~~~~ Epoch : {} Cluster : {}\n\n'.format(e, cluster))
+    for k in sorted(cluster.keys()):
+      f.write('\ncluster : {} : size : {} \n'.format(k, len(cluster[k])))
     write_Cluster(cluster, e)
-    calculate_SSE(cluster, csr_data, e)
+    calculate_SumofSquareDistanceBySize(cluster, csr_data, e)
 
     e += 1 # either we have reached the max_EPoCh
     if(e == max_epoch):
@@ -113,8 +115,8 @@ def K_Means_PairWise(csr_data, K = 3, max_epoch = 10, max_iterations = 10):
   write_Cluster(cluster,e)
 
 def K_Means_CosineSimilarity(csr_data, K = 3, max_epoch = 10, max_iterations = 10):
-  print('Starting K Means')
-  print('K : {}, max_Epoch : {}, max_Iterations : {} \n'.format(K, max_epoch, max_iterations))
+  print('Starting K Means cosine Similaity Metric ')
+  print('\t [ K : {}, max_Epoch : {}, max_Iterations : {} ]\n'.format(K, max_epoch, max_iterations))
   # docs = 5
   docs = 8580
   cluster = {}
@@ -162,7 +164,7 @@ def K_Means_CosineSimilarity(csr_data, K = 3, max_epoch = 10, max_iterations = 1
     for k in sorted(cluster.keys()):
       f.write('\ncluster : {} : size : {} \n'.format(k, len(cluster[k])))
     write_Cluster(cluster, e)
-    calculate_SSE(cluster, csr_data, e)
+    calculate_SumofSquareDistanceBySize(cluster, csr_data, e)
 
     e += 1 # either we have reached the max_EPoCh
     if(e == max_epoch):
@@ -175,7 +177,7 @@ def K_Means_CosineSimilarity(csr_data, K = 3, max_epoch = 10, max_iterations = 1
   print('Sending to write assiginments')
   write_Cluster(cluster,e)
 
-def calculate_SSE(cluster, csr_data, epoch):
+def calculate_SumofSquareDistanceBySize(cluster, csr_data, epoch):
   print('-' * 50)
   c_dist = 0
   try:
@@ -208,8 +210,8 @@ def main_two():
   K = 7
   max_epoch = 10
   max_iterations = 100
-  # K_Means_PairWise(train_csr, K, max_epoch, max_iterations)
-  K_Means_CosineSimilarity(train_csr, K, max_epoch, max_iterations)
+  K_Means_PairWise(train_csr, K, max_epoch, max_iterations)
+  # K_Means_CosineSimilarity(train_csr, K, max_epoch, max_iterations)
 
 if __name__ == '__main__':
   main_two()
